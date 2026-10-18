@@ -19,3 +19,13 @@
 | R1 | low | fixed | Search match count moved left of the native clear (×) button and the input reserves right padding, so the count is no longer overlapped on desktop. |
 
 Earlier verification rounds also reported 27 low-severity findings that were not sent to the refiner, because the workflow only forwards low findings when there are fewer than 40 findings in total.
+
+## Shader background
+
+| Change | Detail |
+|---|---|
+| WebGPU nebula | In the dark theme, on browsers with WebGPU, the background is now a volumetric nebula with drifting star dust, a vignette and light film grain, built with the [Shaders](https://shaders.com) library (v4.0.4, MIT). It is vendored in `vendor/shaders/` so the page makes no third-party requests, and telemetry is disabled. |
+| Fallback | The light theme, browsers without WebGPU, Save-Data mode and any GPU error all keep the original 2D canvas starfield. The 2D loop is paused while the nebula is showing. |
+| Motion | The nebula pauses when the tab is hidden, and shows a single still frame when reduced motion is requested. |
+| Search | The placeholder is shortened to "Search ( / )", and room for the match count is reserved only while a count is shown, so the placeholder is no longer clipped. |
+| Favicon | An inline atom icon replaces the missing `/favicon.ico` request. |
