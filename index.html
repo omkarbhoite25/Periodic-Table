@@ -130,7 +130,7 @@ body {
   overflow-x: hidden; -webkit-font-smoothing: antialiased;
 }
 #sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
-/* WebGPU nebula from the Shaders library (dark theme only); the 2D #sky stays as the fallback */
+/* WebGPU sky from the Shaders library (dark theme only); the 2D #sky stays as the fallback */
 #gpu-sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
 #gpu-sky.on { opacity: 0.9; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -1464,27 +1464,6 @@ const Sky = (() => {
     ctx.globalAlpha = 1; ctx.fillStyle = col.bg; ctx.fillRect(0, 0, W, H);
     if (neb) { ctx.globalAlpha = col.neb; const ox = Math.sin(t / 90000) * W * 0.06 - W * 0.15, oy = Math.cos(t / 110000) * H * 0.05 - H * 0.15;
       ctx.drawImage(neb, ox, oy, W * 1.3, H * 1.3); }
-    ctx.fillStyle = col.star;
-    for (const s of stars) {
-      const drift = (t / 60000) * s.speed;
-      let x = (s.x * W + drift + tx * s.par) % (W + 4); if (x < -2) x += W + 4;
-      const y = s.y * H + ty * s.par;
-      const a = Math.max(0, Math.min(1, s.a + 0.25 * Math.sin(t / 1000 * s.w + s.ph)));
-      ctx.globalAlpha = col.dark ? a : a * 0.55;
-      if (s.r < 1.1) ctx.fillRect(x, y, s.r * 1.4, s.r * 1.4);
-      else { ctx.beginPath(); ctx.arc(x, y, s.r, 0, 6.283); ctx.fill(); }
-    }
-    if (col.dark && !REDUCED) {
-      if (!meteor && t > nextMeteor) { meteor = { x:Math.random() * W * 0.8 + W * 0.1, y:Math.random() * H * 0.4, vx:-0.55 - Math.random() * 0.3, vy:0.28, life:0 }; }
-      if (meteor) {
-        meteor.life += 16; const p = meteor.life / 900, x = meteor.x + meteor.vx * meteor.life, y = meteor.y + meteor.vy * meteor.life;
-        const gr = ctx.createLinearGradient(x, y, x - meteor.vx * 120, y - meteor.vy * 120);
-        gr.addColorStop(0, col.star); gr.addColorStop(1, 'transparent');
-        ctx.globalAlpha = Math.sin(Math.min(1, p) * Math.PI) * 0.8; ctx.strokeStyle = gr; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - meteor.vx * 120, y - meteor.vy * 120); ctx.stroke();
-        if (p >= 1) { meteor = null; nextMeteor = t + 9000 + Math.random() * 14000; }
-      }
-    }
     ctx.globalAlpha = 1;
     if (!REDUCED) raf = requestAnimationFrame(frame);
   }
@@ -1521,8 +1500,8 @@ setTimeout(boot, 1500);
 </script>
 
 <script type="module">
-/* ================= GPU NEBULA (Shaders, MIT) ================= */
-// Dark theme on WebGPU browsers: a volumetric nebula with drifting stars replaces the 2D starfield.
+/* ================= GPU SKY (Shaders, MIT) ================= */
+// Dark theme on WebGPU browsers: a slow deep-space gradient with a faint aurora replaces the 2D sky.
 // Light theme, no WebGPU, Save-Data, or any GPU error: the 2D starfield keeps running.
 const cv = document.getElementById('gpu-sky');
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
@@ -1544,17 +1523,14 @@ async function boot() {
     const { createShader, isWebGPUSupported } = await import('./vendor/shaders/shaders-4.0.4.js');
     if (!(await isWebGPUSupported())) return;
     inst = await createShader(cv, { components: [
-      { type: 'Nebula', id: 'neb', props: {
-        center: { x: 0.68, y: 0.32 }, scale: 1.5, rotation: 18, seed: 7,
-        veilColor: '#10153d', gasColor: '#7b4fd8', coreColor: '#ffd3ae',
-        density: 0.75, dust: 0.6, gasScale: 0.32, billow: 0.55, glow: 0.2,
-        stars: 0.1, starScale: 1.2, twinkle: 0.4, speed: 0.12 } },
-      { type: 'FloatingParticles', id: 'dust', props: {
-        count: 420, speed: 0.04, angle: 180, angleVariance: 20, randomness: 0.2,
-        particleSize: 1, softness: 0.35, twinkle: 0.6, particleColor: '#cdd6ff',
-        opacity: 0.55, blendMode: 'add' } },
-      { type: 'Vignette', props: { color: '#06071a', radius: 0.55, falloff: 0.65, intensity: 0.85 } },
-      { type: 'FilmGrain', props: { strength: 0.06, bias: 3 } },
+      { type: 'FlowingGradient', id: 'space', props: {
+        colorA: '#05071a', colorB: '#24186a', colorC: '#4a1d63', colorD: '#0d3557',
+        colorSpace: 'oklch', speed: 0.18, distortion: 0.55, seed: 11 } },
+      { type: 'Aurora', id: 'aurora', props: {
+        colorA: '#5b3fd6', colorB: '#3fd6c2', colorC: '#3a7bdc', colorSpace: 'oklch',
+        intensity: 40, curtainCount: 3, speed: 1.2, waviness: 45, rayDensity: 12, height: 90,
+        center: { x: 0.62, y: 0 }, seed: 4, opacity: 0.35, blendMode: 'screen' } },
+      { type: 'Vignette', props: { color: '#04050f', radius: 0.5, falloff: 0.7, intensity: 0.9 } },
     ] }, {
       disableTelemetry: true,
       onReady() { live = true; apply(); if (reduced()) setTimeout(() => inst && inst.pause(), 400); },

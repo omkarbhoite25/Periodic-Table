@@ -29,3 +29,10 @@ Earlier verification rounds also reported 27 low-severity findings that were not
 | Motion | The nebula pauses when the tab is hidden, and shows a single still frame when reduced motion is requested. |
 | Search | The placeholder is shortened to "Search ( / )", and room for the match count is reserved only while a count is shown, so the placeholder is no longer clipped. |
 | Favicon | An inline atom icon replaces the missing `/favicon.ico` request. |
+
+## Background without dots
+
+| Change | Detail |
+|---|---|
+| No star dots | The 2D starfield no longer draws stars or the shooting star. It keeps only the soft colour washes. |
+| Generator-based shader | Following the official Shaders agent skill ("build backgrounds from generators"), the dark-theme WebGPU sky is now a slow FlowingGradient with a faint Aurora (screen blend, 35% opacity) and a Vignette. The Nebula, FloatingParticles and FilmGrain layers, which all drew dots or grain, are removed. This is also cheaper to render. |
